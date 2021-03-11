@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #!/usr/bin/env python3
 """
 Extrai os dados do dump do QSA da Receita Federal
@@ -159,14 +160,16 @@ def transform_empresa(row, censor):
     elif row["opcao_pelo_simples"] in ("5", "7"):
         row["opcao_pelo_simples"] = "1"
     else:
-        raise ValueError(f"Opção pelo Simples inválida: {row['opcao_pelo_simples']} (CNPJ: {row['cnpj']})")
+        raise ValueError(
+            f"Opção pelo Simples inválida: {row['opcao_pelo_simples']} (CNPJ: {row['cnpj']})")
 
     if row["opcao_pelo_mei"] in ("N", ""):
         row["opcao_pelo_mei"] = "0"
     elif row["opcao_pelo_mei"] == "S":
         row["opcao_pelo_mei"] = "1"
     else:
-        raise ValueError(f"Opção pelo MEI inválida: {row['opcao_pelo_mei']} (CNPJ: {row['cnpj']})")
+        raise ValueError(
+            f"Opção pelo MEI inválida: {row['opcao_pelo_mei']} (CNPJ: {row['cnpj']})")
 
     if set(row["nome_fantasia"]) == set(["0"]):
         row["nome_fantasia"] = ""
@@ -189,11 +192,11 @@ def transform_socio(row, censor):
         row["nome_representante_legal"] = None
         row["codigo_qualificacao_representante_legal"] = None
 
-    if row["cnpj_cpf_do_socio"] == "000***000000**":
-        row["cnpj_cpf_do_socio"] = ""
+    if row["cnpjcpf_do_socio"] == "000***000000**":
+        row["cnpjcpf_do_socio"] = ""
 
     if row["identificador_de_socio"] == 2:  # Pessoa Física
-        row["cnpj_cpf_do_socio"] = row["cnpj_cpf_do_socio"][-11:]
+        row["cnpjcpf_do_socio"] = row["cnpjcpf_do_socio"][-11:]
 
     # TODO: convert percentual_capital_social
 
@@ -208,7 +211,8 @@ def transform_socio(row, censor):
 def transform_cnae_secundaria(row, censor):
     """Transform row of type CNAE"""
 
-    cnaes = ["".join(digits) for digits in ipartition(row.pop("cnae"), 7) if set(digits) != set(["0"])]
+    cnaes = ["".join(digits) for digits in ipartition(
+        row.pop("cnae"), 7) if set(digits) != set(["0"])]
     data = []
     for cnae in cnaes:
         new_row = row.copy()
@@ -233,7 +237,7 @@ def parse_row(header, line):
     row = {}
     for field in header:
         field_name = field["field_name"]
-        value = line[field["start_index"] : field["end_index"]].strip()
+        value = line[field["start_index"]: field["end_index"]].strip()
 
         if field_name == "filler":
             if set(value) not in (set(), {"9"}):
@@ -258,7 +262,8 @@ def parse_row(header, line):
             try:
                 value = int(value) if value else None
             except ValueError:
-                raise ParsingError(line=line, error=f"Cannot convert {repr(value)} to int")
+                raise ParsingError(
+                    line=line, error=f"Cannot convert {repr(value)} to int")
 
         row[field_name] = value
 
@@ -288,19 +293,22 @@ def extract_files(
         # open_compressed when archive support is implemented)
         zf = ZipFile(filename)
         inner_filenames = zf.filelist
-        assert len(inner_filenames) == 1, f"Only one file inside the zip is expected (got {len(inner_filenames)})"
+        assert len(
+            inner_filenames) == 1, f"Only one file inside the zip is expected (got {len(inner_filenames)})"
         # XXX: The current approach of decoding here and then extracting
         # fixed-width-file data will work only for encodings where 1 character is
         # represented by 1 byte, such as latin1. If the encoding can represent one
         # character using more than 1 byte (like UTF-8), this approach will make
         # incorrect results.
-        fobj = TextIOWrapper(zf.open(inner_filenames[0]), encoding=input_encoding)
+        fobj = TextIOWrapper(
+            zf.open(inner_filenames[0]), encoding=input_encoding)
         for line in tqdm(fobj, desc=f"Extracting {filename}"):
             row_type = line[0]
             try:
                 row = parse_row(header_definitions[row_type], line)
             except ParsingError as exception:
-                error_writer.writerow({"error": exception.error, "line": exception.line})
+                error_writer.writerow(
+                    {"error": exception.error, "line": exception.line})
                 continue
             data = transform_functions[row_type](row, censorship)
             for row in data:

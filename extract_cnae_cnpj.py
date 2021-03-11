@@ -2,6 +2,7 @@ import argparse
 import csv
 
 import rows
+from rows.utils import CsvLazyDictWriter, open_compressed
 from tqdm import tqdm
 
 
@@ -12,18 +13,20 @@ def main():
     parser.add_argument("output_csv_filename")
     args = parser.parse_args()
 
-    writer = rows.utils.CsvLazyDictWriter(args.output_csv_filename)
+    writer = CsvLazyDictWriter(args.output_csv_filename)
 
-    fobj = rows.utils.open_compressed(args.empresa_csv_filename)
+    fobj = open_compressed(args.empresa_csv_filename)
     reader = csv.DictReader(fobj)
     for row in tqdm(reader):
-        writer.writerow({"cnpj": row["cnpj"], "cnae": row["cnae_fiscal"], "primaria": "t"})
+        writer.writerow(
+            {"cnpj": row["cnpj"], "cnae": row["cnae_fiscal"], "primaria": "t"})
     fobj.close()
 
-    fobj = rows.utils.open_compressed(args.cnae_secundaria_csv_filename)
+    fobj = open_compressed(args.cnae_secundaria_csv_filename)
     reader = csv.DictReader(fobj)
     for row in tqdm(reader):
-        writer.writerow({"cnpj": row["cnpj"], "cnae": row["cnae"], "primaria": "f"})
+        writer.writerow(
+            {"cnpj": row["cnpj"], "cnae": row["cnae"], "primaria": "f"})
     fobj.close()
 
     writer.close()

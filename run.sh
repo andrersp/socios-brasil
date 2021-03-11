@@ -23,21 +23,14 @@ function download_data() {
 	MIRROR_URL="https://data.brasil.io/mirror/socios-brasil"
 
 	for url in $FILE_URLS; do
-		if $USE_MIRROR; then
-			url="$MIRROR_URL/$(basename $url)"
-		fi
-		time aria2c \
-			--auto-file-renaming=false \
-			--continue=true \
-			-s $CONNECTIONS \
-			-x $CONNECTIONS \
-			--dir="$DOWNLOAD_PATH" \
-			"$url"
+
+        url="$MIRROR_URL/$(basename $url)"
+		time wget "$url" -P data/download
 	done
 }
 
 function extract_data() {
-	time python extract_dump.py $OUTPUT_PATH $DOWNLOAD_PATH/DADOS_ABERTOS_CNPJ*.zip
+	time python extract_dump.py data/output/ data/download/DADOS_ABERTOS_CNPJ*.zip --no_censorship
 	time python extract_cnae_cnpj.py $OUTPUT_PATH/{empresa,cnae_secundaria,cnae_cnpj}.csv.gz
 }
 
@@ -46,7 +39,7 @@ function extract_holding() {
 }
 
 function extract_cnae() {
-	for versao in "1.0" "1.1" "2.0" "2.1" "2.2" "2.3"; do
+	for versao in "2.3"; do
 		filename="$OUTPUT_PATH/cnae_$versao.csv"
 		rm -rf "$filename"
 		time scrapy runspider \
